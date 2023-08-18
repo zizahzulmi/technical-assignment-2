@@ -1,0 +1,45 @@
+import Adafruit_DHT
+import requests
+import time
+
+# Konfigurasi sensor DHT11
+sensor = Adafruit_DHT.DHT11
+pin = 26
+
+# Ubidots konfigurasi
+TOKEN = "BBFF-8Pq8TybryRdU8EQu0IpqQMXaiuD1bF"
+DEVICE_LABEL = "marhara33"
+VARIABLE_LABEL_TEMPERATURE = "dht 11 suhu"
+VARIABLE_LABEL_HUMIDITY = "dht 11 kelembapan"
+
+UBIDOTS_URL = f"http://industrial.api.ubidots.com/api/v1.6/devices/marhara33/"
+
+def send_to_ubidots(payload):
+    headers = {"X-Auth-Token": TOKEN, "Content-Type": "application/json"}
+    response = requests.post(UBIDOTS_URL, json=payload, headers=headers)
+    print("Data sent to Ubidots:", response.status_code)
+
+try:
+    while True:
+        humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
+        
+        if humidity is not None and temperature is not None:
+            print(f"Temperature: {temperature:.2f} °C")
+            print(f"Humidity: {humidity:.2f}%")
+            
+            payload = {
+                VARIABLE_LABEL_TEMPERATURE: {"value": temperature},
+                VARIABLE_LABEL_HUMIDITY: {"value": humidity}
+            }
+            
+            send_to_ubidots(payload)
+        else:
+            print("Failed to retrieve data from the sensor.")
+        
+        time.sleep(1)  # Tunggu 1 menit sebelum membaca data lagi
+        
+except KeyboardInterrupt:
+    print("Program dihentikan oleh pengguna.")
+finally:
+    print("Program selesai.")
+
